@@ -8,7 +8,10 @@ import {
   Text,
   Select,
   Stack,
+  Avatar,
+  useBreakpointValue,
 } from '@chakra-ui/react'
+import { AddIcon, DeleteIcon, RepeatIcon, DownloadIcon } from '@chakra-ui/icons'
 import type { Player } from '../types'
 
 interface PlayerListProps {
@@ -87,80 +90,100 @@ const PlayerList = ({ onPlayersChange }: PlayerListProps) => {
     const found = savedLists.find((l) => l.name === selectedList)
     if (found) {
       setPlayers(found.players.map(p => ({ ...p, isActive: false })))
+      setListName(found.name)
+      setSelectedList(found.name)
     }
   }
 
   return (
-    <Box w="100%" maxW="600px" mx="auto">
-      <VStack gap={4} align="stretch">
-        <Stack direction={{ base: 'column', md: 'row' }} spacing={2} align="stretch">
-          <Select
-            placeholder="טען רשימה"
-            value={selectedList}
-            onChange={(e) => setSelectedList(e.target.value)}
-            w={{ base: '100%', md: 'auto' }}
-          >
-            {savedLists.map((l) => (
-              <option key={l.name} value={l.name}>{l.name}</option>
-            ))}
-          </Select>
-          <Button colorScheme="blue" onClick={handleLoadList} isDisabled={!selectedList} w={{ base: '100%', md: 'auto' }}>
-            טען
-          </Button>
-        </Stack>
-        <Stack direction={{ base: 'column', md: 'row' }} spacing={2} align="stretch">
-          <Input
-            value={newPlayerName}
-            onChange={(e) => setNewPlayerName(e.target.value)}
-            placeholder="שם השחקן"
-            onKeyPress={(e) => e.key === 'Enter' && handleAddPlayer()}
-            w={{ base: '100%', md: 'auto' }}
-          />
-          <Button colorScheme="blue" onClick={handleAddPlayer} w={{ base: '100%', md: 'auto' }}>
-            הוסף שחקן
-          </Button>
-        </Stack>
-
-        <VStack gap={2} align="stretch">
-          {players.map((player) => (
-            <HStack key={player.id} justify="space-between" p={2} bg="brand.600" borderRadius="md">
-              <HStack>
-                <input
-                  type="checkbox"
-                  checked={player.isActive}
-                  onChange={() => handleToggleActive(player.id)}
-                />
-                <Text color="text.500">{player.name}</Text>
-              </HStack>
-              <Button
-                size="sm"
-                colorScheme="red"
-                variant="ghost"
-                onClick={() => handleDeletePlayer(player.id)}
-              >
-                מחק
-              </Button>
-            </HStack>
-          ))}
-        </VStack>
-        {players.length > 0 && (
+    <>
+      <Box bg="brand.50" rounded="xl" shadow="md" p={4} w="100%" maxW="600px" mx="auto">
+        <VStack gap={6} align="stretch">
           <Stack direction={{ base: 'column', md: 'row' }} spacing={2} align="stretch">
-            <Input
-              value={listName}
-              onChange={(e) => setListName(e.target.value)}
-              placeholder="שם לרשימה"
+            <Select
+              placeholder="טען רשימה"
+              value={selectedList}
+              onChange={(e) => setSelectedList(e.target.value)}
               w={{ base: '100%', md: 'auto' }}
-            />
-            <Button colorScheme="green" onClick={handleSaveList} w={{ base: '100%', md: 'auto' }}>
-              שמור רשימה
-            </Button>
-            <Button colorScheme="red" variant="outline" onClick={() => setPlayers([])} w={{ base: '100%', md: 'auto' }}>
-              איפוס שחקנים
+              color="black"
+            >
+              {savedLists.map((l) => (
+                <option key={l.name} value={l.name}>{l.name}</option>
+              ))}
+            </Select>
+            <Button leftIcon={<DownloadIcon />} colorScheme="blue" onClick={handleLoadList} isDisabled={!selectedList} w={{ base: '100%', md: 'auto' }}>
+              טען
             </Button>
           </Stack>
-        )}
-      </VStack>
-    </Box>
+          <Stack direction={{ base: 'column', md: 'row' }} spacing={2} align="stretch">
+            <Input
+              value={newPlayerName}
+              onChange={(e) => setNewPlayerName(e.target.value)}
+              placeholder="שם השחקן"
+              onKeyPress={(e) => e.key === 'Enter' && handleAddPlayer()}
+              w={{ base: '100%', md: 'auto' }}
+            />
+            <Button leftIcon={<AddIcon />} colorScheme="green" onClick={handleAddPlayer} w={{ base: '100%', md: 'auto' }}>
+              הוסף שחקן
+            </Button>
+          </Stack>
+          <VStack gap={2} align="stretch">
+            {players.map((player) => (
+              <HStack
+                key={player.id}
+                justify="space-between"
+                p={2}
+                bg="brand.100"
+                rounded="md"
+                cursor="pointer"
+                onClick={() => handleToggleActive(player.id)}
+                _hover={{ bg: 'brand.200' }}
+              >
+                <HStack pointerEvents="none">
+                  <Avatar name={player.name} size="sm" bg="brand.500" color="white" />
+                  <Text color="brand.700" fontWeight="medium">{player.name}</Text>
+                </HStack>
+                <HStack>
+                  <input
+                    type="checkbox"
+                    checked={player.isActive}
+                    readOnly
+                    style={{ width: 18, height: 18 }}
+                    tabIndex={-1}
+                  />
+                  <Button
+                    size="sm"
+                    colorScheme="red"
+                    variant="ghost"
+                    onClick={e => { e.stopPropagation(); handleDeletePlayer(player.id); }}
+                    leftIcon={<DeleteIcon />}
+                  >
+                    מחק
+                  </Button>
+                </HStack>
+              </HStack>
+            ))}
+          </VStack>
+          {players.length > 0 && (
+            <Stack direction={{ base: 'column', md: 'row' }} spacing={2} align="stretch">
+              <Input
+                value={listName}
+                onChange={(e) => setListName(e.target.value)}
+                placeholder="שם לרשימה"
+                w={{ base: '100%', md: 'auto' }}
+                color="black"
+              />
+              <Button leftIcon={<DownloadIcon />} colorScheme="green" onClick={handleSaveList} w={{ base: '100%', md: 'auto' }}>
+                שמור רשימה
+              </Button>
+              <Button leftIcon={<RepeatIcon />} colorScheme="red" variant="outline" onClick={() => setPlayers([])} w={{ base: '100%', md: 'auto' }}>
+                איפוס שחקנים
+              </Button>
+            </Stack>
+          )}
+        </VStack>
+      </Box>
+    </>
   )
 }
 

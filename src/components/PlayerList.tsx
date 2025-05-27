@@ -122,6 +122,7 @@ const PlayerList = ({ onPlayersChange }: PlayerListProps) => {
               placeholder="שם השחקן"
               onKeyPress={(e) => e.key === 'Enter' && handleAddPlayer()}
               w={{ base: '100%', md: 'auto' }}
+              color="black"
             />
             <Button leftIcon={<AddIcon />} colorScheme="green" onClick={handleAddPlayer} w={{ base: '100%', md: 'auto' }}>
               הוסף שחקן

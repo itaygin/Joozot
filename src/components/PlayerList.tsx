@@ -90,10 +90,22 @@ const PlayerList = ({ onPlayersChange }: PlayerListProps) => {
       alert('יש להזין שם לרשימה')
       return
     }
-    // Upsert: insert or update if exists
+    // Check if the name already exists
+    const { data: existing, error: fetchError } = await supabase
+      .from('player_lists')
+      .select('name')
+      .eq('name', listName.trim())
+      .single();
+
+    if (existing) {
+      alert('כבר קיימת רשימה בשם זה. בחר שם אחר.');
+      return;
+    }
+
+    // Save only if not exists
     const { error } = await supabase
       .from('player_lists')
-      .upsert([{ name: listName.trim(), players }], { onConflict: 'name' })
+      .insert([{ name: listName.trim(), players }]);
     if (error) {
       alert('שגיאה בשמירה ל-Supabase');
       console.error(error);

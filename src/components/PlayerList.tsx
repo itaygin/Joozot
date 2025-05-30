@@ -13,6 +13,7 @@ import {
 } from '@chakra-ui/react'
 import { AddIcon, DeleteIcon, RepeatIcon, DownloadIcon } from '@chakra-ui/icons'
 import type { Player } from '../types'
+import { createClient } from '@supabase/supabase-js'
 
 interface PlayerListProps {
   onPlayersChange: (players: Player[]) => void
@@ -24,6 +25,10 @@ type SavedPlayerList = {
 }
 
 const PLAYER_LISTS_KEY = 'fifa-player-lists'
+
+const supabaseUrl = 'https://lydblbdxakenltmzcqkk.supabase.co'
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx5ZGJsYmR4YWtlbmx0bXpjcWtrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg0MzE0OTMsImV4cCI6MjA2NDAwNzQ5M30.Aj_0aF6iU1Z-9pQQj4EDALb52cGAjXhpJEQpQ02IgB0'
+export const supabase = createClient(supabaseUrl, supabaseKey)
 
 const PlayerList = ({ onPlayersChange }: PlayerListProps) => {
   const [players, setPlayers] = useState<Player[]>([])
@@ -38,9 +43,19 @@ const PlayerList = ({ onPlayersChange }: PlayerListProps) => {
   }, [players, onPlayersChange])
 
   useEffect(() => {
-    const lists = localStorage.getItem(PLAYER_LISTS_KEY)
-    setSavedLists(lists ? JSON.parse(lists) : [])
-  }, [])
+    fetchSavedLists();
+  }, []);
+
+  const fetchSavedLists = async () => {
+    const { data, error } = await supabase
+      .from('player_lists')
+      .select('name');
+    if (data) {
+      setSavedLists(data.map((row) => ({ name: row.name, players: [] })));
+    } else {
+      console.error(error);
+    }
+  };
 
   const handleAddPlayer = () => {
     if (!newPlayerName.trim()) {
@@ -70,28 +85,38 @@ const PlayerList = ({ onPlayersChange }: PlayerListProps) => {
     setPlayers(players.filter((player) => player.id !== playerId))
   }
 
-  const handleSaveList = () => {
+  const handleSaveList = async () => {
     if (!listName.trim()) {
       alert('יש להזין שם לרשימה')
       return
     }
-    const lists = localStorage.getItem(PLAYER_LISTS_KEY)
-    const parsed: SavedPlayerList[] = lists ? JSON.parse(lists) : []
-    const updated = [
-      ...parsed.filter((l) => l.name !== listName.trim()),
-      { name: listName.trim(), players },
-    ]
-    localStorage.setItem(PLAYER_LISTS_KEY, JSON.stringify(updated))
-    setSavedLists(updated)
-    alert('הרשימה נשמרה!')
+    // Upsert: insert or update if exists
+    const { error } = await supabase
+      .from('player_lists')
+      .upsert([{ name: listName.trim(), players }], { onConflict: 'name' })
+    if (error) {
+      alert('שגיאה בשמירה ל-Supabase');
+      console.error(error);
+    } else {
+      alert('הרשימה נשמרה ל-Supabase!');
+      fetchSavedLists();
+    }
   }
 
-  const handleLoadList = () => {
-    const found = savedLists.find((l) => l.name === selectedList)
-    if (found) {
-      setPlayers(found.players.map(p => ({ ...p, isActive: false })))
-      setListName(found.name)
-      setSelectedList(found.name)
+  const handleLoadList = async () => {
+    if (!selectedList) return;
+    const { data, error } = await supabase
+      .from('player_lists')
+      .select('*')
+      .eq('name', selectedList)
+      .single();
+    if (data) {
+      setPlayers(data.players);
+      setListName(data.name);
+      setSelectedList(data.name);
+    } else {
+      alert('שגיאה בטעינה מ-Supabase');
+      console.error(error);
     }
   }
 
